@@ -85,7 +85,7 @@ void setup() {
   Serial.begin(115200);
   Serial.println("Load preferences");  // Debug-Ausgabe: "Lade Einstellungen"
   
-  pinMode(SENSOR, INPUT);
+  pinMode(SENSOR, INPUT); // pinmodus auf eingang setzen
   
   title[0] = 0;  // Setze das erste Zeichen des Titels auf 0 (leerer Titel)
 

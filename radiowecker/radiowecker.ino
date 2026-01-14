@@ -74,12 +74,19 @@ void findNextAlarm() {
   }
 }
 
+
+int jumpCount = 0;        // Anzahl erkannte Spruenge
+bool wasJumpedOn = false; // Sprung erkannt
+unsigned long windowStart = 0;  // Zeit des ersten Sprungs
+
 // Initialisierung des Systems
 void setup() {
   // Starte die serielle Kommunikation mit einer Baudrate von 115200
   Serial.begin(115200);
   Serial.println("Load preferences");  // Debug-Ausgabe: "Lade Einstellungen"
-
+  
+  pinMode(SENSOR, INPUT);
+  
   title[0] = 0;  // Setze das erste Zeichen des Titels auf 0 (leerer Titel)
 
   // Lade die gespeicherten Präferenzen aus dem EEPROM des ESP32
@@ -255,7 +262,7 @@ void loop() {
       String weatherData = getWeatherData(LATITUDE, LONGITUDE, TIME_ZONE_IANA);
       displayWeather(weatherData);
     }
-    lastWeatherUpdate = millis();  // Zeitstempel für das nächste Update
+    lastWeatherUpdate = millis();  // Zeitstempel für das nächste Update*±±
   }
 
   // Zeitgesteuertes Ereignis: Update der Anzeige alle 1 Sekunde
@@ -303,10 +310,45 @@ void loop() {
   }
 
   // Reset-Flag, wenn Zeit weiterläuft und wir nicht mehr im Alarm-Minutenbereich sind
-if (minutes != alarmtime) {
-    alarmTriggered = false;
-}
+  if (minutes != alarmtime) {
+      alarmTriggered = false;
+  }
 
   // Starte einen Neustart, wenn das Gerät mehr als 5 Minuten getrennt war
   if (!connected && ((millis() - discon) > 300000)) ESP.restart();
+
+
+  int sensorValue = analogRead(SENSOR); // A0
+  //Serial.println(sensorValue);
+  // Jemand auf dem Pad? 
+  if (sensorValue > 512 && !wasJumpedOn) {
+    // Dies ist ein Neuer Sprung
+    if (jumpCount == 0) {
+      windowStart = millis(); // Zeit des ersten Sprungs merken
+    }
+    jumpCount++;
+    wasJumpedOn = true;
+    Serial.print("Sprung erkannt! Anzahl:");
+    Serial.println(jumpCount);
+  } 
+  else if (sensorValue < 200) { // niemand auf dem pad
+    wasJumpedOn = false;
+  }
+
+  // Test ob 5 sekunden um sind
+  if (jumpCount > 0 && (millis() - windowStart >= 5000)) {
+    
+    // Min 3 Spruenge in 5 sekunden
+    if (jumpCount >= 3) {
+      Serial.println("Springen erkannt! Alarm stop");
+      toggleRadio(true);  // Schalte das Radio aus
+    } else {
+      Serial.println("Nicht genug gesprungen, nochmal.");
+    }
+    // Reset everything for the next window
+    jumpCount = 0;
+    windowStart = 0;
+  }
+
+
 }

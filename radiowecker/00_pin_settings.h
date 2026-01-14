@@ -21,3 +21,5 @@
 #define TFT_RST 22  // Reset-Pin für das TFT-Display
 #define TFT_LED 15  // Hintergrundbeleuchtung des TFT-Displays
 #define LED_ON 0    // Logikpegel für die Hintergrundbeleuchtung (0 = Ein)
+
+#define SENSOR A0
